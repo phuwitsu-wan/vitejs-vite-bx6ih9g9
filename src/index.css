@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Anuphan", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Kanit", "Anuphan", sans-serif;
+  --color-forest-950: #072414;
+  --color-forest-900: #0f3d24;
+  --color-forest-800: #14532d;
+  --color-forest-700: #1d6b3c;
+  --color-forest-600: #2f7d47;
+  --color-leaf-300: #d4ec95;
+  --color-leaf-400: #c5e17a;
+  --color-leaf-500: #a8cc4f;
+  --color-cream: #f6f8f1;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 2s cubic-bezier(.2,.6,.4,1) infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(.6); opacity: .9; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@keyframes flutter {
+  0%, 100% { transform: translate(0, 0) rotate(-8deg); }
+  25% { transform: translate(14px, -10px) rotate(6deg); }
+  50% { transform: translate(28px, 4px) rotate(-4deg); }
+  75% { transform: translate(10px, 12px) rotate(8deg); }
+}
+
+html, body, #root { height: 100%; }
+body { @apply bg-cream text-slate-800 antialiased; -webkit-tap-highlight-color: transparent; }
+h1, h2, h3, .font-display { font-family: var(--font-display); }
+
+/* ---------- Leaflet ---------- */
+.leaflet-container { font-family: var(--font-sans); background: #e8efe3; }
+.leaflet-control-attribution { font-size: 10px; }
+.pp-marker { background: none !important; border: none !important; }
+.pp-pin {
+  position: relative; width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg);
+  display: grid; place-items: center; box-shadow: 0 4px 10px rgba(0,0,0,.25); border: 2px solid #fff;
+  transition: transform .2s ease;
+}
+.pp-pin > svg { transform: rotate(45deg); color: #fff; width: 17px; height: 17px; }
+.pp-marker:hover .pp-pin, .pp-pin.is-active { transform: rotate(-45deg) scale(1.2); }
+.pp-pin.is-active { box-shadow: 0 0 0 4px rgba(255,255,255,.9), 0 6px 16px rgba(0,0,0,.35); }
+.pp-pulse { position: absolute; inset: 0; border-radius: 50%; animation: pulse-ring 1.8s infinite; }
+.pp-dot {
+  width: 14px; height: 14px; border-radius: 9999px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+}
+.pp-cluster {
+  background: rgba(15,61,36,.92); color: #fff; border-radius: 9999px; display: grid; place-items: center;
+  font-weight: 600; border: 3px solid rgba(197,225,122,.9); box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.pp-district-label { background: transparent; border: 0; box-shadow: none; color: #14532d; font-weight: 600; font-size: 11px; text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+.pp-district-label::before { display: none; }
+.pp-me { width: 18px; height: 18px; border-radius: 9999px; background: #2563eb; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(37,99,235,.25); }
+
+/* scrollbars */
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #cbd5c0; border-radius: 9999px; }
+
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
