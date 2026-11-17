@@ -25,7 +25,7 @@ export default function Layout({ children }) {
           โหมดสาธิต — ยังไม่ได้เชื่อม Google Sheets ข้อมูลที่แก้จะเก็บไว้ในเบราว์เซอร์นี้เท่านั้น
         </div>
       )}
-      <header className="sticky top-0 z-[1100] border-b border-forest-900/10 bg-forest-900 text-white shadow-lg">
+      <header className="pp-app-header sticky top-0 z-[1100] border-b border-forest-900/10 bg-forest-900 text-white shadow-lg">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-3 sm:h-16 sm:px-5">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
             <motion.img
@@ -38,7 +38,7 @@ export default function Layout({ children }) {
               <div className="truncate text-[11px] text-leaf-300 sm:text-xs">จังหวัดเพชรบูรณ์</div>
             </div>
           </Link>
-          <nav className="ml-auto hidden items-center gap-1 md:flex">
+          <nav className="pp-app-nav ml-auto hidden items-center gap-1 md:flex">
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end}
                 className={({ isActive }) => cn('relative rounded-full px-4 py-2 text-sm font-medium transition-colors', isActive ? 'text-forest-950' : 'text-white/85 hover:text-white')}>
@@ -58,7 +58,7 @@ export default function Layout({ children }) {
       <main className={cn('relative flex-1', isMap ? 'min-h-0 overflow-hidden' : 'pb-20 md:pb-0')}>{children}</main>
 
       {/* แถบเมนูล่างสำหรับมือถือ */}
-      <nav className={cn('safe-bottom fixed inset-x-0 bottom-0 z-[1100] border-t border-slate-200 bg-white/95 backdrop-blur md:hidden')}>
+      <nav className={cn('pp-app-nav safe-bottom fixed inset-x-0 bottom-0 z-[1100] border-t border-slate-200 bg-white/95 backdrop-blur md:hidden')}>
         <div className="grid grid-cols-4">
           {NAV.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}

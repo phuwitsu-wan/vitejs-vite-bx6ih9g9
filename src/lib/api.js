@@ -17,8 +17,15 @@ const clean = (s) => {
   if (!Array.isArray(o.documents)) o.documents = []
   return o
 }
-const normSite = (s) => ({ ...s, lat: s.lat == null || s.lat === '' ? null : Number(s.lat), lng: s.lng == null || s.lng === '' ? null : Number(s.lng),
+const normSite = (s) => ({ ...s, category: String(s.category ?? '').trim(), lat: s.lat == null || s.lat === '' ? null : Number(s.lat), lng: s.lng == null || s.lng === '' ? null : Number(s.lng),
   documents: Array.isArray(s.documents) ? s.documents : [], extra: s.extra && typeof s.extra === 'object' ? s.extra : {}, is_published: s.is_published !== false })
+
+const okColor = (c) => (/^#[0-9a-f]{3,8}$/i.test(String(c || '').trim()) ? String(c).trim() : null)
+const normCat = (c) => {
+  const d = DEFAULT_CATEGORIES.find((x) => x.key === String(c.key ?? '').trim()) || {}
+  return { ...d, ...c, key: String(c.key ?? '').trim(), name: c.name || d.name, short_name: c.short_name || d.short_name || c.name,
+    color: okColor(c.color) || d.color || '#64748b', icon: c.icon || d.icon || 'MapPin', is_visible: c.is_visible !== false }
+}
 
 // ---------------- local storage helpers ----------------
 const LS = { sites: 'ppn_demo_sites_v2', cats: 'ppn_demo_cats_v2', settings: 'ppn_demo_settings_v2', session: 'ppn_session_v2', cache: 'ppn_cache_v2' }
@@ -72,7 +79,7 @@ export async function fetchAll({ includeHidden = false } = {}) {
   const d = includeHidden ? await gasPost('adminData') : await gasGet('data')
   const out = {
     sites: (d.sites || []).filter((s) => s.id && s.name).map(normSite),
-    categories: d.categories?.length ? d.categories : DEFAULT_CATEGORIES,
+    categories: d.categories?.length ? d.categories.filter((c) => c.key).map(normCat) : DEFAULT_CATEGORIES,
     settings: { ...DEFAULT_SETTINGS, ...Object.fromEntries(Object.entries(d.settings || {}).filter(([, v]) => v !== '' && v != null)) },
     version: d.version,
   }

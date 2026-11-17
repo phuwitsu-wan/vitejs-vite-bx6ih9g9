@@ -71,7 +71,8 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 
 @media print {
   @page { size: A4; margin: 10mm; }
-  header, nav, .print\:hidden, .leaflet-control-container { display: none !important; }
+  .pp-app-header, .pp-app-nav, .print\:hidden, .leaflet-control-container { display: none !important; }
+  html, body { height: auto !important; }
   body { background: #fff; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   main { padding: 0 !important; }
@@ -80,3 +81,13 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 .pp-area-label { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
 .pp-area-label span { font-size: 10px; color: #072414; }
 .pp-area-label b { font-size: 15px; font-family: var(--font-display); color: #072414; }
+
+/* รายงานสรุปหน้าเดียว */
+body.pp-report-open { overflow: hidden; }
+@media print {
+  body.pp-report-open { overflow: visible; }
+  body.pp-report-open #root, body.pp-report-open .pp-report-controls { display: none !important; }
+  body.pp-report-open #pp-report { position: static !important; display: block !important; background: #fff !important; }
+  .pp-sheet { width: auto !important; box-shadow: none !important; }
+  .break-inside-avoid { break-inside: avoid; }
+}

@@ -107,7 +107,7 @@ function SitesTab() {
                   <tr key={s.id} className={cn('border-t border-slate-100 hover:bg-slate-50', s.is_published === false && 'opacity-55')}>
                     <td className="p-2"><input type="checkbox" className="accent-forest-700" checked={sel.has(s.id)} onChange={() => toggle(s.id)} /></td>
                     <td className="max-w-[280px] p-2"><button onClick={() => setEditing(s)} className="line-clamp-2 text-left font-medium text-slate-800 hover:text-forest-700">{s.name}</button></td>
-                    <td className="p-2"><span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs text-white" style={{ background: c.color }}><CatIcon name={c.icon} size={11} />{c.short_name}</span></td>
+                    <td className="p-2"><span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs text-slate-700"><span className="grid h-5 w-5 place-items-center rounded-md text-white" style={{ background: c.color || '#64748b' }}><CatIcon name={c.icon} size={11} /></span>{c.short_name || c.name || s.category || 'ไม่ระบุ'}</span></td>
                     <td className="whitespace-nowrap p-2 text-slate-600">{s.amphoe}</td>
                     <td className="p-2">{hasCoords(s) ? <span className="text-xs text-emerald-700">✓</span> : <span className="text-xs text-amber-600">ไม่มี</span>}</td>
                     <td className="p-2 text-xs text-slate-500">{s.documents?.length ? <span className="inline-flex items-center gap-1"><FileText size={13} />{s.documents.length}</span> : '–'}</td>
