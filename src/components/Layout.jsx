@@ -22,7 +22,7 @@ export default function Layout({ children }) {
     <div className="flex h-full flex-col">
       {isDemo && (
         <div className="bg-amber-100 px-3 py-1 text-center text-xs text-amber-900">
-          โหมดสาธิต — ยังไม่ได้เชื่อม Supabase ข้อมูลที่แก้จะเก็บไว้ในเบราว์เซอร์นี้เท่านั้น
+          โหมดสาธิต — ยังไม่ได้เชื่อม Google Sheets ข้อมูลที่แก้จะเก็บไว้ในเบราว์เซอร์นี้เท่านั้น
         </div>
       )}
       <header className="sticky top-0 z-[1100] border-b border-forest-900/10 bg-forest-900 text-white shadow-lg">

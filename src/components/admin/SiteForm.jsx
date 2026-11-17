@@ -1,9 +1,10 @@
 import { useState, lazy, Suspense } from 'react'
 import { motion } from 'framer-motion'
-import { X, Save, Loader2, ImagePlus, Trash2, Plus, Crosshair } from 'lucide-react'
+import { X, Save, Loader2, ImagePlus, Trash2, Plus, Crosshair, FilePlus2, ChevronUp } from 'lucide-react'
 import { useData } from '../../lib/DataContext'
 import { AMPHOES, LEVELS } from '../../lib/constants'
-import { saveSite, uploadImage } from '../../lib/api'
+import { saveSite, uploadFile, trashFile } from '../../lib/api'
+import { ext, fmtSize, fileColor } from '../SiteDetail'
 
 const MapView = lazy(() => import('../MapView'))
 
@@ -14,7 +15,7 @@ const inp = 'w-full rounded-lg border-0 bg-white px-3 py-2 text-sm ring-1 ring-s
 
 export default function SiteForm({ initial, onClose }) {
   const { categories, catMap } = useData()
-  const [s, setS] = useState(() => ({ category: categories[0]?.key, is_published: true, extra: {}, ...initial }))
+  const [s, setS] = useState(() => ({ category: categories[0]?.key, is_published: true, extra: {}, ...initial, documents: initial?.documents || [] }))
   const [extraRows, setExtraRows] = useState(() => Object.entries(initial?.extra || {}).map(([k, v]) => [k, String(v ?? '')]))
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -28,6 +29,7 @@ export default function SiteForm({ initial, onClose }) {
     try {
       const extra = Object.fromEntries(extraRows.filter(([k]) => k.trim()).map(([k, v]) => [k.trim(), isFinite(v) && v.trim() !== '' ? Number(v) : v]))
       await saveSite({ ...s, extra })
+      removed.forEach((id) => trashFile(id))
       onClose(true)
     } catch (e2) { setErr(e2.message || String(e2)) } finally { setSaving(false) }
   }
@@ -35,8 +37,24 @@ export default function SiteForm({ initial, onClose }) {
   const onImage = async (e) => {
     const f = e.target.files?.[0]; if (!f) return
     setUploading(true)
-    try { const url = await uploadImage(f); setS((p) => ({ ...p, image_url: url })) } catch (e2) { setErr('อัปโหลดรูปไม่สำเร็จ: ' + e2.message) } finally { setUploading(false) }
+    try { const r = await uploadFile(f, { image: true }); setS((p) => ({ ...p, image_url: r.image || r.url })) } catch (e2) { setErr('อัปโหลดรูปไม่สำเร็จ: ' + e2.message) } finally { setUploading(false) }
   }
+
+  const [docBusy, setDocBusy] = useState(0)
+  const [removed, setRemoved] = useState([])
+  const onDocs = async (e) => {
+    const files = [...(e.target.files || [])]; e.target.value = ''
+    for (const f of files) {
+      setDocBusy((n) => n + 1)
+      try {
+        const r = await uploadFile(f)
+        setS((p) => ({ ...p, documents: [...(p.documents || []), { id: r.id, name: r.name || f.name, title: f.name.replace(/\.\w+$/, ''), url: r.url, download: r.download, size: r.size || f.size, mime: f.type }] }))
+      } catch (e2) { setErr(`อัปโหลด ${f.name} ไม่สำเร็จ: ${e2.message}`) } finally { setDocBusy((n) => n - 1) }
+    }
+  }
+  const setDoc = (i, patch) => setS((p) => ({ ...p, documents: p.documents.map((d, j) => (j === i ? { ...d, ...patch } : d)) }))
+  const removeDoc = (i) => setS((p) => { const d = p.documents[i]; if (d?.id) setRemoved((r) => [...r, d.id]); return { ...p, documents: p.documents.filter((_, j) => j !== i) } })
+  const moveDoc = (i, dir) => setS((p) => { const a = [...p.documents]; const j = i + dir; if (j < 0 || j >= a.length) return p; [a[i], a[j]] = [a[j], a[i]]; return { ...p, documents: a } })
 
   const useMyLocation = () => navigator.geolocation?.getCurrentPosition((p) => setS((x) => ({ ...x, lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) })))
 
@@ -118,6 +136,33 @@ export default function SiteForm({ initial, onClose }) {
                 </label>
                 {s.image_url && <button type="button" onClick={() => setS((p) => ({ ...p, image_url: null }))} className="text-xs text-red-600">ลบรูป</button>}
               </div>
+            </div>
+
+            <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-700">เอกสารให้ดาวน์โหลด ({(s.documents || []).length})</span>
+                <label className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-forest-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-forest-700">
+                  {docBusy ? <Loader2 size={14} className="animate-spin" /> : <FilePlus2 size={14} />} {docBusy ? `กำลังอัปโหลด (${docBusy})` : 'อัปโหลดเอกสาร'}
+                  <input type="file" multiple hidden onChange={onDocs} accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.jpg,.jpeg,.png,.zip" />
+                </label>
+              </div>
+              {(s.documents || []).length === 0 ? (
+                <p className="rounded-lg border border-dashed border-slate-300 p-3 text-center text-xs text-slate-400">ยังไม่มีเอกสาร — รองรับ PDF, Word, Excel, PowerPoint, รูปภาพ (ไม่เกิน 20 MB ต่อไฟล์)</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {s.documents.map((d, i) => (
+                    <li key={d.id || i} className="flex items-center gap-2 rounded-lg bg-slate-50 p-1.5">
+                      <div className="flex flex-col">
+                        <button type="button" onClick={() => moveDoc(i, -1)} className="text-slate-400 hover:text-slate-700" aria-label="เลื่อนขึ้น"><ChevronUp size={12} /></button>
+                      </div>
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-[9px] font-bold uppercase text-white" style={{ background: fileColor(d.name) }}>{ext(d.name)}</span>
+                      <input className="min-w-0 flex-1 rounded-md border-0 bg-white px-2 py-1 text-sm ring-1 ring-slate-200" value={d.title || ''} placeholder={d.name} onChange={(e) => setDoc(i, { title: e.target.value })} />
+                      <span className="hidden text-[11px] text-slate-400 sm:inline">{d.size ? fmtSize(d.size) : ''}</span>
+                      <button type="button" onClick={() => removeDoc(i)} className="px-1 text-slate-400 hover:text-red-600" aria-label="ลบเอกสาร"><Trash2 size={15} /></button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div>

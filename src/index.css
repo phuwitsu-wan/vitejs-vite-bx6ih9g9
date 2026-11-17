@@ -68,3 +68,15 @@ h1, h2, h3, .font-display { font-family: var(--font-display); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+@media print {
+  @page { size: A4; margin: 10mm; }
+  header, nav, .print\:hidden, .leaflet-control-container { display: none !important; }
+  body { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { padding: 0 !important; }
+}
+
+.pp-area-label { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.pp-area-label span { font-size: 10px; color: #072414; }
+.pp-area-label b { font-size: 15px; font-family: var(--font-display); color: #072414; }

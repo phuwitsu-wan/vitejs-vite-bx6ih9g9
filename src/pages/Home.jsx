@@ -2,7 +2,7 @@ import { asset } from '../lib/asset'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useInView, animate } from 'framer-motion'
-import { MapPinned, ArrowRight, AlertTriangle, CalendarClock, Phone, Navigation } from 'lucide-react'
+import { MapPinned, ArrowRight, AlertTriangle, CalendarClock, Phone, Navigation, CalendarDays, BookOpen, ExternalLink, Leaf, Check } from 'lucide-react'
 import { useData } from '../lib/DataContext'
 import Facebook from '../components/FacebookIcon'
 import CatIcon from '../components/CatIcon'
@@ -21,9 +21,24 @@ function Counter({ to }) {
 }
 
 const fadeUp = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0 } }
+const fileUrl = (u) => (u && u.startsWith('/') ? asset(u) : u)
+
+function ToolCard({ href, icon: I, color, title, desc }) {
+  return (
+    <motion.a variants={fadeUp} href={href} target="_blank" rel="noreferrer" whileHover={{ y: -4 }}
+      className="group flex items-start gap-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg">
+      <div className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl ${color}`}><I size={28} /></div>
+      <div className="min-w-0">
+        <div className="font-display text-lg font-semibold text-slate-800">{title}</div>
+        <div className="mt-1 text-sm text-slate-500">{desc}</div>
+        <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest-700">เปิดใช้งาน <ArrowRight size={15} className="transition group-hover:translate-x-1" /></span>
+      </div>
+    </motion.a>
+  )
+}
 
 export default function Home() {
-  const { publicSites, categories, settings } = useData()
+  const { publicSites, publicCategories: categories, settings } = useData()
   const counts = useMemo(() => {
     const c = {}; publicSites.forEach((s) => { c[s.category] = (c[s.category] || 0) + 1 }); return c
   }, [publicSites])
@@ -147,28 +162,50 @@ export default function Home() {
         </section>
       )}
 
-      {/* ---------- LINKS ---------- */}
-      <section className="mx-auto mt-12 grid max-w-7xl gap-4 px-4 pb-12 sm:px-5 md:grid-cols-2">
-        <motion.a href={settings.risk_map_url} target="_blank" rel="noreferrer" initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-lg">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-orange-100 text-orange-600"><AlertTriangle size={28} /></div>
-          <div>
-            <div className="font-display text-lg font-semibold text-slate-800">แผนที่เฝ้าระวังโรคและแมลงระบาด</div>
-            <div className="text-sm text-slate-500">พยากรณ์ความเสี่ยงรายตำบลจากสภาพอากาศ 7 วัน</div>
-          </div>
-          <ArrowRight className="ml-auto shrink-0 text-slate-400" />
-        </motion.a>
-        <motion.a href={settings.facebook_url} target="_blank" rel="noreferrer" initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} whileHover={{ scale: 1.02 }}
-          className="flex items-center gap-4 rounded-2xl bg-[#1877f2] p-5 text-white shadow-sm transition hover:shadow-lg">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15"><Facebook size={28} /></div>
-          <div>
+      {/* ---------- ONLINE TOOLS ---------- */}
+      <section className="mx-auto mt-12 max-w-7xl px-4 pb-12 sm:px-5">
+        <h2 className="text-2xl font-semibold text-forest-900">บริการและเครื่องมือออนไลน์</h2>
+        <p className="mb-5 text-sm text-slate-500">เครื่องมือช่วยตัดสินใจสำหรับเกษตรกรและเจ้าหน้าที่ส่งเสริมการเกษตร</p>
+        <motion.div className="grid gap-4 md:grid-cols-2" initial="hidden" whileInView="show" viewport={{ once: true, margin: '-40px' }} transition={{ staggerChildren: 0.1 }}>
+          {/* ปฏิทินเพาะปลูก + คู่มือ */}
+          <motion.div variants={fadeUp} className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#06C755] to-forest-700 p-5 text-white shadow-lg md:row-span-2 sm:p-6">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
+            <div className="absolute -bottom-12 right-10 h-32 w-32 rounded-full bg-white/10" />
+            <div className="relative">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 ring-1 ring-white/30"><CalendarDays size={28} /></div>
+              <h3 className="mt-4 font-display text-2xl font-semibold">ปฏิทินเพาะปลูกเท่าทันภูมิอากาศ</h3>
+              <p className="mt-2 text-white/90">สร้างปฏิทินการผลิตเฉพาะแปลงจากชนิดพืช วันปลูก และพิกัดแปลง บอกระยะการเจริญเติบโต การให้น้ำ แผนปุ๋ย และแจ้งเตือนโรคแมลงตามสภาพอากาศจริง</p>
+              <ul className="mt-3 grid grid-cols-2 gap-1.5 text-sm text-white/90">
+                {['ระยะพืชจากความร้อนสะสม (GDD)', 'แจ้งเตือนโรค-แมลงล่วงหน้า', 'แผนปุ๋ยและชีวภัณฑ์', 'ปฏิทินหน้าเดียว (A4)'].map((t) => <li key={t} className="flex items-start gap-1.5"><Check size={16} className="mt-0.5 shrink-0" />{t}</li>)}
+              </ul>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <a href={settings.calendar_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 font-semibold text-forest-900 shadow hover:bg-leaf-300">
+                  <ExternalLink size={17} /> เปิดใช้งานปฏิทิน
+                </a>
+                <a href={fileUrl(settings.calendar_manual_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-5 py-2.5 font-medium ring-1 ring-white/40 hover:bg-white/25">
+                  <BookOpen size={17} /> คู่มือการใช้งาน (PDF)
+                </a>
+              </div>
+            </div>
+          </motion.div>
+
+          <ToolCard href={settings.ghg_url} icon={Leaf} color="bg-sky-100 text-sky-700" title="บันทึกการปล่อยก๊าซเรือนกระจกภาคการเกษตร"
+            desc="คำนวณการปล่อยก๊าซเรือนกระจกรายแปลง ตามแนวทาง MRV, IPCC และ T-VER สำหรับเจ้าหน้าที่ส่งเสริมการเกษตร" />
+          <ToolCard href={settings.risk_map_url} icon={AlertTriangle} color="bg-orange-100 text-orange-600" title="แผนที่เฝ้าระวังโรคและแมลงระบาด"
+            desc="พยากรณ์ความเสี่ยงการระบาดรายตำบลจากข้อมูลพยากรณ์อากาศ 7 วัน" />
+        </motion.div>
+
+        <motion.a href={settings.facebook_url} target="_blank" rel="noreferrer" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} whileHover={{ scale: 1.01 }}
+          className="mt-4 flex items-center gap-4 rounded-2xl bg-[#1877f2] p-5 text-white shadow-sm transition hover:shadow-lg">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15"><Facebook size={26} /></div>
+          <div className="min-w-0">
             <div className="font-display text-lg font-semibold">ติดต่อ / สอบถาม ผ่าน Facebook</div>
-            <div className="text-sm text-white/85">{settings.office_name}</div>
+            <div className="truncate text-sm text-white/85">{settings.office_name}</div>
           </div>
           <ArrowRight className="ml-auto shrink-0 text-white/70" />
         </motion.a>
         {settings.office_phone && (
-          <a href={`tel:${settings.office_phone}`} className="flex items-center gap-3 rounded-2xl bg-white p-4 text-forest-800 ring-1 ring-slate-200 md:col-span-2">
+          <a href={`tel:${settings.office_phone}`} className="mt-3 flex items-center gap-3 rounded-2xl bg-white p-4 text-forest-800 ring-1 ring-slate-200">
             <Phone size={20} /> โทร {settings.office_phone}
           </a>
         )}

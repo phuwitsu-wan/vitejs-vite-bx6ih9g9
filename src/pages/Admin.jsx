@@ -1,7 +1,7 @@
 import { asset } from '../lib/asset'
 import { useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogIn, LogOut, Plus, Search, Pencil, Trash2, Eye, EyeOff, Loader2, Upload, Download, Database, Palette, Settings, MapPinOff, RotateCcw } from 'lucide-react'
+import { LogIn, LogOut, Plus, Search, Pencil, Trash2, Eye, EyeOff, Loader2, Upload, Download, Database, Palette, Settings, MapPinOff, RotateCcw, FileText } from 'lucide-react'
 import { useData } from '../lib/DataContext'
 import { signIn, signOut, deleteSites, setPublished, bulkInsert, saveCategory, deleteCategory, saveSettings, isDemo, resetDemo } from '../lib/api'
 import { AMPHOES, ICON_CHOICES } from '../lib/constants'
@@ -97,7 +97,7 @@ function SitesTab() {
               <tr>
                 <th className="w-10 p-2"><input type="checkbox" className="accent-forest-700" checked={pageRows.length > 0 && pageRows.every((r) => sel.has(r.id))}
                   onChange={(e) => setSel((p) => { const n = new Set(p); pageRows.forEach((r) => (e.target.checked ? n.add(r.id) : n.delete(r.id))); return n })} /></th>
-                <th className="p-2">ชื่อ</th><th className="p-2">ประเภท</th><th className="p-2">อำเภอ</th><th className="p-2">พิกัด</th><th className="p-2">สถานะ</th><th className="w-24 p-2" />
+                <th className="p-2">ชื่อ</th><th className="p-2">ประเภท</th><th className="p-2">อำเภอ</th><th className="p-2">พิกัด</th><th className="p-2">เอกสาร</th><th className="p-2">แสดงบนเว็บ</th><th className="w-24 p-2" />
               </tr>
             </thead>
             <tbody>
@@ -110,10 +110,9 @@ function SitesTab() {
                     <td className="p-2"><span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-xs text-white" style={{ background: c.color }}><CatIcon name={c.icon} size={11} />{c.short_name}</span></td>
                     <td className="whitespace-nowrap p-2 text-slate-600">{s.amphoe}</td>
                     <td className="p-2">{hasCoords(s) ? <span className="text-xs text-emerald-700">✓</span> : <span className="text-xs text-amber-600">ไม่มี</span>}</td>
+                    <td className="p-2 text-xs text-slate-500">{s.documents?.length ? <span className="inline-flex items-center gap-1"><FileText size={13} />{s.documents.length}</span> : '–'}</td>
                     <td className="p-2">
-                      <button onClick={() => setPublished([s.id], s.is_published === false)} className={cn('rounded-full px-2 py-0.5 text-xs', s.is_published === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700')}>
-                        {s.is_published === false ? 'ซ่อนอยู่' : 'แสดง'}
-                      </button>
+                      <EyeToggle on={s.is_published !== false} onChange={(v) => setPublished([s.id], v)} />
                     </td>
                     <td className="p-2 text-right">
                       <button onClick={() => setEditing(s)} className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-forest-700" aria-label="แก้ไข"><Pencil size={16} /></button>
@@ -158,12 +157,14 @@ function CategoriesTab() {
       <p className="text-sm text-slate-600">แก้ชื่อ สี และไอคอนของแต่ละประเภทได้ทันที แผนที่และสถิติจะเปลี่ยนตามโดยไม่ต้องแก้โค้ด หรือเพิ่มประเภทใหม่ได้</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((c) => (
-          <motion.div layout key={c.key} className="flex items-start gap-3 rounded-xl bg-white p-4 ring-1 ring-slate-200">
+          <motion.div layout key={c.key} className={cn('flex items-start gap-3 rounded-xl bg-white p-4 ring-1 ring-slate-200 transition', c.is_visible === false && 'opacity-60')}>
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white" style={{ background: c.color }}><CatIcon name={c.icon} size={22} /></span>
             <div className="min-w-0 flex-1">
               <div className="font-semibold">{c.name}</div>
               <div className="text-xs text-slate-500">{c.short_name} · รหัส {c.key} · {sites.filter((s) => s.category === c.key).length} รายการ</div>
+              <div className={cn('mt-1 text-xs font-medium', c.is_visible === false ? 'text-slate-500' : 'text-emerald-700')}>{c.is_visible === false ? 'ซ่อนทั้งประเภทจากหน้าเว็บ' : 'แสดงบนหน้าเว็บ'}</div>
             </div>
+            <EyeToggle on={c.is_visible !== false} onChange={(v) => saveCategory({ ...c, is_visible: v })} />
             <button onClick={() => setDraft({ ...c })} className="rounded p-1.5 text-slate-500 hover:bg-slate-100"><Pencil size={16} /></button>
             <button onClick={() => remove(c)} className="rounded p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
           </motion.div>
@@ -208,7 +209,7 @@ function SettingsTab() {
   const { settings } = useData()
   const [d, setD] = useState(settings)
   const [ok, setOk] = useState(false)
-  const F = [['hero_subtitle', 'ข้อความแนะนำหน้าแรก', true], ['office_name', 'ชื่อหน่วยงาน'], ['office_phone', 'เบอร์โทรหน่วยงาน'], ['facebook_url', 'ลิงก์ Facebook'], ['risk_map_url', 'ลิงก์แผนที่เฝ้าระวังโรคและแมลง']]
+  const F = [['hero_subtitle', 'ข้อความแนะนำหน้าแรก', true], ['office_name', 'ชื่อหน่วยงาน'], ['office_phone', 'เบอร์โทรหน่วยงาน'], ['facebook_url', 'ลิงก์ Facebook'], ['risk_map_url', 'ลิงก์แผนที่เฝ้าระวังโรคและแมลง'], ['calendar_url', 'ลิงก์ปฏิทินเพาะปลูกเท่าทันภูมิอากาศ'], ['calendar_manual_url', 'ลิงก์คู่มือปฏิทินเพาะปลูก (PDF)'], ['ghg_url', 'ลิงก์เว็บบันทึกการปล่อยก๊าซเรือนกระจก']]
   return (
     <div className="max-w-2xl space-y-3 rounded-xl bg-white p-4 ring-1 ring-slate-200">
       {F.map(([k, l, area]) => (
@@ -272,6 +273,17 @@ function ImportTab() {
   )
 }
 
+function EyeToggle({ on, onChange }) {
+  const [busy, setBusy] = useState(false)
+  const click = async () => { setBusy(true); try { await onChange(!on) } catch (e) { alert(e.message) } finally { setBusy(false) } }
+  return (
+    <motion.button whileTap={{ scale: 0.85 }} onClick={click} disabled={busy} title={on ? 'กำลังแสดง — กดเพื่อซ่อน' : 'ซ่อนอยู่ — กดเพื่อแสดง'}
+      className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-full transition', on ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200')}>
+      {busy ? <Loader2 size={17} className="animate-spin" /> : on ? <Eye size={18} /> : <EyeOff size={18} />}
+    </motion.button>
+  )
+}
+
 const TABS = [
   { key: 'sites', label: 'ข้อมูลจุด', icon: Database, C: SitesTab },
   { key: 'cats', label: 'ประเภทข้อมูล', icon: Palette, C: CategoriesTab },
@@ -290,7 +302,7 @@ export default function Admin() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-forest-900">จัดการข้อมูล</h1>
-          <p className="text-xs text-slate-500">เข้าสู่ระบบเป็น {session.email} · การแก้ไขแสดงผลบนเว็บทันที</p>
+          <p className="text-xs text-slate-500">เข้าสู่ระบบเป็น {session.email} · การแก้ไขแสดงผลบนเว็บภายในไม่กี่วินาที{!isDemo && ' · แก้ใน Google Sheet โดยตรงก็ได้'}</p>
         </div>
         <button onClick={async () => { await signOut(); reload() }} className="ml-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-300 hover:bg-white"><LogOut size={16} />ออกจากระบบ</button>
       </div>

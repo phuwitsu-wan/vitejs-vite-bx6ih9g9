@@ -1,14 +1,14 @@
 // ค่าเริ่มต้นของประเภทจุด — แอดมินแก้ชื่อ/สี/ไอคอนได้จากหน้า "ประเภทข้อมูล" (เก็บในฐานข้อมูล)
 export const DEFAULT_CATEGORIES = [
-  { key: 'soil', name: 'ศูนย์จัดการดินปุ๋ยชุมชน', short_name: 'ศดปช.', color: '#b45309', icon: 'Layers', sort_order: 1,
+  { is_visible: true, key: 'soil', name: 'ศูนย์จัดการดินปุ๋ยชุมชน', short_name: 'ศดปช.', color: '#b45309', icon: 'Layers', sort_order: 1,
     description: 'ศูนย์ถ่ายทอดความรู้การวิเคราะห์ดิน การใช้ปุ๋ยตามค่าวิเคราะห์ดิน และการผลิตปุ๋ยอินทรีย์' },
-  { key: 'cpmc', name: 'ศูนย์จัดการศัตรูพืชชุมชน', short_name: 'ศจช.', color: '#dc2626', icon: 'Bug', sort_order: 2,
+  { is_visible: true, key: 'cpmc', name: 'ศูนย์จัดการศัตรูพืชชุมชน', short_name: 'ศจช.', color: '#dc2626', icon: 'Bug', sort_order: 2,
     description: 'ศูนย์เรียนรู้การจัดการศัตรูพืชแบบผสมผสาน ผลิตและใช้ชีวภัณฑ์ เฝ้าระวังการระบาดในชุมชน' },
-  { key: 'forecast', name: 'แปลงพยากรณ์', short_name: 'แปลงพยากรณ์', color: '#2563eb', icon: 'Radar', sort_order: 3,
+  { is_visible: true, key: 'forecast', name: 'แปลงพยากรณ์', short_name: 'แปลงพยากรณ์', color: '#2563eb', icon: 'Radar', sort_order: 3,
     description: 'แปลงติดตามสถานการณ์การระบาดศัตรูพืชรายสัปดาห์ เพื่อแจ้งเตือนและพยากรณ์การระบาด' },
-  { key: 'ffs', name: 'โรงเรียนเกษตรกร', short_name: 'รร.เกษตรกร', color: '#7c3aed', icon: 'GraduationCap', sort_order: 4,
+  { is_visible: true, key: 'ffs', name: 'โรงเรียนเกษตรกร', short_name: 'รร.เกษตรกร', color: '#7c3aed', icon: 'GraduationCap', sort_order: 4,
     description: 'กระบวนการเรียนรู้แบบมีส่วนร่วมในแปลงเกษตรกร (Farmer Field School)' },
-  { key: 'clinic', name: 'จุดบริการคลินิกพืช', short_name: 'คลินิกพืช', color: '#0d9488', icon: 'Stethoscope', sort_order: 5,
+  { is_visible: true, key: 'clinic', name: 'จุดบริการคลินิกพืช', short_name: 'คลินิกพืช', color: '#0d9488', icon: 'Stethoscope', sort_order: 5,
     description: 'บริการวินิจฉัยอาการผิดปกติของพืช แนะนำวิธีจัดการศัตรูพืชอย่างถูกต้องและปลอดภัย' },
 ]
 
@@ -19,6 +19,9 @@ export const DEFAULT_SETTINGS = {
   risk_map_url: 'https://plantriskmap.vercel.app/',
   office_name: 'กลุ่มอารักขาพืช สำนักงานเกษตรจังหวัดเพชรบูรณ์',
   office_phone: '',
+  calendar_url: 'https://vitejs-vite-3s2feat8.vercel.app/',
+  calendar_manual_url: '/docs/manual-crop-calendar.pdf',
+  ghg_url: 'https://doaeghg.vercel.app/',
 }
 
 export const AMPHOES = [
@@ -40,5 +43,5 @@ export const SITE_FIELDS = [
   ['lat', 'ละติจูด'], ['lng', 'ลองจิจูด'], ['phone', 'เบอร์โทร'], ['contact_name', 'ผู้ประสานงาน/ประธาน'],
   ['main_crops', 'พืชหลัก'], ['members', 'สมาชิก (ราย)'], ['established_year', 'ปีที่จัดตั้ง (พ.ศ.)'],
   ['service_hours', 'วัน-เวลาให้บริการ'], ['status', 'สถานะ'], ['description', 'รายละเอียด'],
-  ['image_url', 'รูปภาพ (URL)'], ['source', 'แหล่งข้อมูล'], ['is_published', 'แสดงบนเว็บ'],
+  ['image_url', 'รูปภาพ (URL)'], ['documents', 'เอกสาร (JSON)'], ['source', 'แหล่งข้อมูล'], ['is_published', 'แสดงบนเว็บ'],
 ]

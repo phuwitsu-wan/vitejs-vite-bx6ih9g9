@@ -11,7 +11,7 @@ import { AMPHOES } from '../lib/constants'
 import { cn, distanceKm, hasCoords, matchesSearch } from '../lib/utils'
 
 export default function MapPage() {
-  const { publicSites, categories, catMap, loading } = useData()
+  const { publicSites, publicCategories: categories, catMap, loading } = useData()
   const [params, setParams] = useSearchParams()
   const [q, setQ] = useState('')
   const [cats, setCats] = useState(() => new Set(params.get('cat') ? [params.get('cat')] : []))

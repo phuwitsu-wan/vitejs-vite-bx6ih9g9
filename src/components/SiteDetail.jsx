@@ -1,9 +1,13 @@
 import { motion } from 'framer-motion'
-import { X, Phone, Navigation, MapPin, Users, Calendar, Sprout, Clock, Award, Share2, AlertTriangle } from 'lucide-react'
+import { X, Phone, Navigation, MapPin, Users, Calendar, Sprout, Clock, Award, Share2, AlertTriangle, FileText, Download } from 'lucide-react'
 import CatIcon from './CatIcon'
 import Facebook from './FacebookIcon'
 import { directionsUrl, formatPhone, hasCoords, telHref, isOpenToday } from '../lib/utils'
 import { useData } from '../lib/DataContext'
+
+export const ext = (n = '') => (n.split('.').pop() || 'file').slice(0, 4)
+export const fmtSize = (b) => (b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)
+export const fileColor = (n = '') => ({ pdf: '#dc2626', doc: '#2563eb', docx: '#2563eb', xls: '#16a34a', xlsx: '#16a34a', csv: '#16a34a', ppt: '#ea580c', pptx: '#ea580c', jpg: '#7c3aed', jpeg: '#7c3aed', png: '#7c3aed', webp: '#7c3aed' }[ext(n).toLowerCase()] || '#64748b')
 
 const Row = ({ icon: I, label, children }) => children ? (
   <div className="flex gap-3 py-2">
@@ -59,6 +63,26 @@ export default function SiteDetail({ site, onClose }) {
               <div key={k} className="rounded-lg bg-slate-50 px-3 py-2"><dt className="text-xs text-slate-500">{k}</dt><dd className="font-medium text-slate-800">{String(v)}</dd></div>
             ))}
           </dl>
+        )}
+        {site.documents?.length > 0 && (
+          <div className="mt-3">
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><FileText size={14} />เอกสารดาวน์โหลด ({site.documents.length})</div>
+            <ul className="space-y-1.5">
+              {site.documents.map((d, i) => (
+                <li key={d.id || i}>
+                  <a href={d.download || d.url} target="_blank" rel="noreferrer" download={d.name}
+                    className="group flex items-center gap-3 rounded-xl bg-white p-2.5 ring-1 ring-slate-200 transition hover:bg-leaf-300/20 hover:ring-forest-600">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[10px] font-bold uppercase text-white" style={{ background: fileColor(d.name) }}>{ext(d.name)}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-1 text-sm font-medium text-slate-800">{d.title || d.name}</span>
+                      {d.size ? <span className="text-xs text-slate-400">{fmtSize(d.size)}</span> : null}
+                    </span>
+                    <Download size={17} className="shrink-0 text-slate-400 transition group-hover:translate-y-0.5 group-hover:text-forest-700" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {site.source && <p className="mt-3 text-[11px] text-slate-400">แหล่งข้อมูล: {site.source}</p>}
       </div>
