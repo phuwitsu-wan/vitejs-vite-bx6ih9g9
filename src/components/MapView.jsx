@@ -67,7 +67,7 @@ export default function MapView({ sites, catMap, selectedId, onSelect, me, distr
           <TileLayer attribution="Tiles &copy; Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
         </LayersControl.BaseLayer>
         <LayersControl.BaseLayer name="แผนที่โทนอ่อน">
-          <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+          <TileLayer attribution="Tiles &copy; Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
         </LayersControl.BaseLayer>
       </LayersControl>
 

@@ -58,7 +58,7 @@ function SvgMap({ features, labels, points, categories, width = 330 }) {
     const tiles = []
     for (let tx = Math.floor(vb.x / TILE); tx <= Math.floor((vb.x + vb.w) / TILE); tx++)
       for (let ty = Math.floor(vb.y / TILE); ty <= Math.floor((vb.y + vb.h) / TILE); ty++)
-        tiles.push({ tx, ty, href: `https://${'abcd'[(tx + ty) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${tx}/${ty}.png` })
+        tiles.push({ tx, ty, href: `https://tile.openstreetmap.org/${z}/${tx}/${ty}.png` })
     return { shapes, tiles, vb, P, k: vb.w / width, allD: shapes.map((x) => x.d).join('') }
   }, [features, width])
   if (!view) return <div className="grid h-60 place-items-center text-xs text-slate-400">กำลังโหลดแผนที่…</div>
@@ -104,7 +104,7 @@ function SvgMap({ features, labels, points, categories, width = 330 }) {
             <span className="grid h-3.5 w-3.5 place-items-center rounded-full text-white" style={{ background: c.color }}><CatIcon name={c.icon} size={8} strokeWidth={2.6} /></span>{c.short_name}
           </span>
         ))}
-        <span className="ml-auto text-[8px] text-slate-400">แผนที่ฐาน © OpenStreetMap © CARTO</span>
+        <span className="ml-auto text-[8px] text-slate-400">แผนที่ฐาน © ผู้ร่วมพัฒนา OpenStreetMap</span>
       </div>
     </div>
   )
