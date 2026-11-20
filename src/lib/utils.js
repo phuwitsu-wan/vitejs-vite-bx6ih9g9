@@ -92,7 +92,7 @@ export function csvToSites(text, categories) {
       if (!k) { if (v) o.extra[h] = v; return }
       o[k] = v === '' ? null : v
     })
-    if (o.category) o.category = catByName[o.category] || o.category
+    if (o.category) o.category = catByName[String(o.category).trim()] || String(o.category).trim()
     for (const k of ['lat', 'lng']) o[k] = o[k] == null ? null : parseFloat(o[k])
     for (const k of ['members', 'established_year']) o[k] = o[k] == null ? null : parseInt(o[k], 10) || null
     o.is_published = o.is_published == null ? true : !/^(false|0|no|ไม่)/i.test(String(o.is_published))

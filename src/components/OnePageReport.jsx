@@ -3,15 +3,15 @@ import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Printer, Copy, X, Check } from 'lucide-react'
 import { useData } from '../lib/DataContext'
-import { useGeo, assignArea, makeBreaks, classOf } from '../lib/geo'
+import { useGeo, assignArea } from '../lib/geo'
 import { asset } from '../lib/asset'
 import { AMPHOES } from '../lib/constants'
 import { cn, formatPhone } from '../lib/utils'
-import CatIcon from './CatIcon'
+import CatIcon, { ICON_PATHS } from './CatIcon'
 
 const SECTIONS = [
   { key: 'summary', label: 'สรุปตัวเลข' },
-  { key: 'map', label: 'แผนที่การกระจายตัว' },
+  { key: 'map', label: 'แผนที่ตำแหน่ง' },
   { key: 'areaTable', label: 'ตารางรายพื้นที่' },
   { key: 'level', label: 'มาตรฐานศูนย์' },
   { key: 'crops', label: 'พืชหลัก' },
@@ -26,52 +26,85 @@ const mix = (hex, t) => {
   return `rgb(${m(r)},${m(g)},${m(b)})`
 }
 
-// ---------- แผนที่ SVG (พิมพ์ได้คมชัด ไม่ต้องโหลดภาพแผนที่) ----------
-function SvgMap({ features, values, color, labels, points, width = 330 }) {
+// ---------- แผนที่ SVG + พื้นหลังแผนที่ถนนแบบจาง (Web Mercator ให้ตรงกับภาพแผนที่) ----------
+const TILE = 256
+const merc = (lng, lat, z) => {
+  const n = TILE * 2 ** z, r = (lat * Math.PI) / 180
+  return [((lng + 180) / 360) * n, ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n]
+}
+
+function SvgMap({ features, labels, points, categories, width = 330 }) {
   const view = useMemo(() => {
     if (!features?.length) return null
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    const each = (f, cb) => { const g = f.geometry; (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).forEach((p) => p.forEach((ring) => cb(ring))) }
-    features.forEach((f) => each(f, (ring) => ring.forEach(([x, y]) => { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y) })))
-    const kx = Math.cos((((minY + maxY) / 2) * Math.PI) / 180)
-    const s = (width - 8) / ((maxX - minX) * kx)
-    const H = (maxY - minY) * s + 8
-    const P = ([x, y]) => [4 + (x - minX) * kx * s, 4 + (maxY - y) * s]
+    let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity
+    const rings = (f) => { const g = f.geometry; return (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).flat() }
+    features.forEach((f) => rings(f).forEach((ring) => ring.forEach(([x, y]) => { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y) })))
+    // เลือกระดับซูมให้ภาพแผนที่คมชัดพอสำหรับพิมพ์ (ประมาณ 2 เท่าของความกว้างที่แสดง)
+    let z = 6
+    while (z < 15) { const [x1] = merc(w, 0, z + 1), [x2] = merc(e, 0, z + 1); if (x2 - x1 > width * 2.2) break; z++ }
+    const [x0, y0] = merc(w, n, z), [x1, y1] = merc(e, s, z)
+    const pad = (x1 - x0) * 0.04
+    const vb = { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 }
+    const P = ([lng, lat]) => merc(lng, lat, z)
     const shapes = features.map((f) => {
       let d = '', best = null
-      each(f, (ring) => {
+      rings(f).forEach((ring) => {
         d += ring.map((pt, i) => `${i ? 'L' : 'M'}${P(pt).map((v) => v.toFixed(1)).join(',')}`).join('') + 'Z'
         if (!best || ring.length > best.length) best = ring
       })
       const c = best.reduce((a, pt) => { const q = P(pt); return [a[0] + q[0], a[1] + q[1]] }, [0, 0]).map((v) => v / best.length)
       return { code: f.properties.code, name: f.properties.name, d, c }
     })
-    return { shapes, H, P }
+    const tiles = []
+    for (let tx = Math.floor(vb.x / TILE); tx <= Math.floor((vb.x + vb.w) / TILE); tx++)
+      for (let ty = Math.floor(vb.y / TILE); ty <= Math.floor((vb.y + vb.h) / TILE); ty++)
+        tiles.push({ tx, ty, href: `https://${'abcd'[(tx + ty) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${tx}/${ty}.png` })
+    return { shapes, tiles, vb, P, k: vb.w / width, allD: shapes.map((x) => x.d).join('') }
   }, [features, width])
   if (!view) return <div className="grid h-60 place-items-center text-xs text-slate-400">กำลังโหลดแผนที่…</div>
-  const vals = view.shapes.map((s) => values[s.code] || 0)
-  const breaks = makeBreaks(vals), max = Math.max(0, ...vals)
-  const shade = (i) => mix(color, 0.3 + (0.7 * (i + 1)) / breaks.length)
+  const { vb, k } = view
+  const used = categories.filter((c) => points.some((p) => p.category === c.key))
+  const R = 5.4 * k // รัศมีสัญลักษณ์
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${view.H}`} className="w-full">
-        {view.shapes.map((s) => {
-          const k = classOf(values[s.code] || 0, breaks)
-          return <path key={s.code} d={s.d} fill={k < 0 ? '#eceeea' : shade(k)} stroke="#fff" strokeWidth="0.8" />
-        })}
-        {points?.map((p, i) => { const [x, y] = view.P([p.lng, p.lat]); return <circle key={i} cx={x} cy={y} r="2.1" fill={p.color} stroke="#fff" strokeWidth="0.6" /> })}
-        {labels && view.shapes.map((s) => (
-          <text key={s.code} x={s.c[0]} y={s.c[1]} textAnchor="middle" fontSize={view.shapes.length > 20 ? 6 : 8.5} fill="#072414" fontWeight="600"
-            style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 2.2 }}>{s.name}{values[s.code] ? ` (${values[s.code]})` : ''}</text>
-        ))}
+      <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} className="w-full overflow-hidden rounded-md ring-1 ring-slate-200">
+        <defs>
+          <clipPath id="pp-vb"><rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} /></clipPath>
+        </defs>
+        <g clipPath="url(#pp-vb)">
+          <rect x={vb.x} y={vb.y} width={vb.w} height={vb.h} fill="#f3f4f1" />
+          {/* แผนที่ถนนแบบจาง */}
+          <g opacity="0.55" style={{ filter: 'grayscale(35%)' }}>
+            {view.tiles.map((t) => <image key={`${t.tx}-${t.ty}`} href={t.href} x={t.tx * TILE} y={t.ty * TILE} width={TILE + 0.5} height={TILE + 0.5} preserveAspectRatio="none" />)}
+          </g>
+          {/* พื้นที่นอกเขตรายงานให้จางลงอีก */}
+          <path d={`M${vb.x},${vb.y}h${vb.w}v${vb.h}h${-vb.w}Z${view.allD}`} fill="#ffffff" fillOpacity="0.6" fillRule="evenodd" />
+          {view.shapes.map((sh) => <path key={sh.code} d={sh.d} fill="none" stroke="#1d6b3c" strokeWidth={0.9 * k} strokeDasharray={`${3 * k} ${2 * k}`} opacity="0.75" />)}
+          <path d={view.allD} fill="none" stroke="#14532d" strokeWidth={1.8 * k} />
+          {/* สัญลักษณ์ศูนย์ */}
+          {points.map((p, i) => {
+            const [x, y] = view.P([p.lng, p.lat]), c = categories.find((cc) => cc.key === p.category) || {}
+            return (
+              <g key={i} transform={`translate(${x},${y})`}>
+                <circle r={R} fill={c.color || '#64748b'} stroke="#fff" strokeWidth={1.1 * k} />
+                <g transform={`translate(${-R * 0.62},${-R * 0.62}) scale(${(R * 1.24) / 24})`} fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"
+                  dangerouslySetInnerHTML={{ __html: ICON_PATHS[c.icon] || ICON_PATHS.MapPin }} />
+              </g>
+            )
+          })}
+          {labels && view.shapes.map((sh) => (
+            <text key={sh.code} x={sh.c[0]} y={sh.c[1]} textAnchor="middle" fontSize={(view.shapes.length > 20 ? 6 : 8.5) * k} fill="#14532d" fontWeight="700"
+              style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 2.6 * k }}>{sh.name}</text>
+          ))}
+        </g>
       </svg>
-      <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[9px] text-slate-600">
-        <span className="flex items-center gap-1"><span className="h-2.5 w-4 rounded-sm" style={{ background: '#eceeea' }} />ไม่มี</span>
-        {breaks.map((b, i) => (
-          <span key={b} className="flex items-center gap-1"><span className="h-2.5 w-4 rounded-sm" style={{ background: shade(i) }} />
-            {i === breaks.length - 1 ? (b < max ? `${b}–${max}` : b) : breaks[i + 1] - 1 > b ? `${b}–${breaks[i + 1] - 1}` : b}</span>
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-slate-600">
+        {used.map((c) => (
+          <span key={c.key} className="flex items-center gap-1">
+            <span className="grid h-3.5 w-3.5 place-items-center rounded-full text-white" style={{ background: c.color }}><CatIcon name={c.icon} size={8} strokeWidth={2.6} /></span>{c.short_name}
+          </span>
         ))}
-        <span className="text-slate-400">จุด</span>
+        <span className="ml-auto text-[8px] text-slate-400">แผนที่ฐาน © OpenStreetMap © CARTO</span>
       </div>
     </div>
   )
@@ -238,8 +271,8 @@ export default function OnePageReport({ onClose }) {
                 <section className={cn('mt-3 grid gap-4', on('map') && (on('level') || on('crops') || on('areaTable')) ? 'grid-cols-[46%_1fr]' : 'grid-cols-1')}>
                   {on('map') && (
                     <div>
-                      <h3 className="mb-1 text-[12px] font-semibold text-forest-800">แผนที่การกระจายตัวราย{sub?.label}</h3>
-                      <SvgMap features={sub?.geo.features} values={values} color={color} labels points={sites.filter((s) => Number.isFinite(s.lat)).map((s) => ({ lat: s.lat, lng: s.lng, color: categories.find((c) => c.key === s.category)?.color }))} />
+                      <h3 className="mb-1 text-[12px] font-semibold text-forest-800">แผนที่ตำแหน่งเครือข่าย{area ? `ในอำเภอ${area}` : 'ในจังหวัด'}</h3>
+                      <SvgMap features={sub?.geo.features} labels categories={categories} points={sites.filter((s) => Number.isFinite(s.lat) && Number.isFinite(s.lng)).map((s) => ({ lat: s.lat, lng: s.lng, category: s.category }))} />
                     </div>
                   )}
                   <div className="space-y-3">
